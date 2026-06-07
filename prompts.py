@@ -11,12 +11,15 @@ Categories:
   how-to, or the status of an existing order.
 
 Extraction rules:
-- product: the product name mentioned in the message; null if none.
-- phone: the customer's phone number; null if none is present.
-- email: the customer's email address; null if none is present.
+- product: the product name. Put the common noun in its base dictionary form
+  (nominative singular), but keep brand names and model identifiers exactly as
+  written. Example: from "статус заказа ноутбука Lenovo ThinkPad" extract
+  "ноутбук Lenovo ThinkPad" (not "ноутбука"). null if no product is mentioned.
+- phone: the customer's phone number, copied verbatim; null if none is present.
+- email: the customer's email address, copied verbatim; null if none is present.
 
 Messages may be written in any language (commonly Russian). Do not translate
-extracted values — copy them verbatim.
+extracted values; only normalize the product noun's grammatical form as above.
 
 Respond with ONLY a JSON object, no extra text, in exactly this shape:
 {"type": "order|complaint|question", "product": string-or-null,

@@ -4,7 +4,7 @@ import json
 import logging
 
 import openai
-from openai import OpenAI
+from openai import AsyncOpenAI, OpenAI
 from pydantic import ValidationError
 from tenacity import (
     before_sleep_log,
@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 MAX_ATTEMPTS = 4
 SERVER_ERROR_STATUS = 500
-_wait = wait_exponential(multiplier=1, min=2, max=30)
 
 
 class LLMResponseError(Exception):
@@ -47,45 +46,33 @@ def _is_retryable(exc: BaseException) -> bool:
     return False
 
 
-class ClassifierClient:
-    """Thin wrapper around an OpenAI-compatible chat endpoint with retry + validation."""
+# One retry policy, reused by both the sync and async clients.
+_retry = retry(
+    retry=retry_if_exception(_is_retryable),
+    stop=stop_after_attempt(MAX_ATTEMPTS),
+    wait=wait_exponential(multiplier=1, min=2, max=30),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+    reraise=True,
+)
 
-    def __init__(self, api_key: str, model: str, base_url: str | None = None) -> None:
-        # Disable the SDK's built-in retries; tenacity owns the retry policy.
-        self._client = OpenAI(api_key=api_key, base_url=base_url, max_retries=0)
-        self._model = model
 
-    def classify(self, text: str) -> Extraction:
-        return self._classify(text)
+def _build_messages(text: str) -> list[dict]:
+    return [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": text},
+    ]
 
-    @retry(
-        retry=retry_if_exception(_is_retryable),
-        stop=stop_after_attempt(MAX_ATTEMPTS),
-        wait=_wait,
-        before_sleep=before_sleep_log(logger, logging.WARNING),
-        reraise=True,
-    )
-    def _classify(self, text: str) -> Extraction:
-        response = self._client.chat.completions.create(
-            model=self._model,
-            temperature=0,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": text},
-            ],
-        )
-        return self._parse(response)
 
-    @staticmethod
-    def _parse(response) -> Extraction:
-        content = response.choices[0].message.content if response.choices else None
-        if not content:
-            raise LLMResponseError("response contained no content")
-        payload = _json_from_text(content)
-        try:
-            return Extraction.model_validate(payload)
-        except ValidationError as exc:
-            raise LLMResponseError(f"response failed schema validation: {exc}") from exc
+def parse_response(response) -> Extraction:
+    """Turn a chat-completion response into a validated Extraction."""
+    content = response.choices[0].message.content if response.choices else None
+    if not content:
+        raise LLMResponseError("response contained no content")
+    payload = _json_from_text(content)
+    try:
+        return Extraction.model_validate(payload)
+    except ValidationError as exc:
+        raise LLMResponseError(f"response failed schema validation: {exc}") from exc
 
 
 def _json_from_text(content: str) -> dict:
@@ -102,3 +89,47 @@ def _json_from_text(content: str) -> dict:
         except json.JSONDecodeError as exc:
             raise LLMResponseError(f"response was not valid JSON: {exc}") from exc
     raise LLMResponseError("response did not contain a JSON object")
+
+
+class ClassifierClient:
+    """Synchronous client over an OpenAI-compatible chat endpoint."""
+
+    def __init__(self, api_key: str, model: str, base_url: str | None = None) -> None:
+        # Disable the SDK's built-in retries; tenacity owns the retry policy.
+        self._client = OpenAI(api_key=api_key, base_url=base_url, max_retries=0)
+        self._model = model
+
+    def classify(self, text: str) -> Extraction:
+        return self._classify(text)
+
+    @_retry
+    def _classify(self, text: str) -> Extraction:
+        response = self._client.chat.completions.create(
+            model=self._model,
+            temperature=0,
+            messages=_build_messages(text),
+        )
+        return parse_response(response)
+
+
+class AsyncClassifierClient:
+    """Asynchronous client — lets many requests run concurrently."""
+
+    def __init__(self, api_key: str, model: str, base_url: str | None = None) -> None:
+        self._client = AsyncOpenAI(api_key=api_key, base_url=base_url, max_retries=0)
+        self._model = model
+
+    async def classify(self, text: str) -> Extraction:
+        return await self._classify(text)
+
+    @_retry
+    async def _classify(self, text: str) -> Extraction:
+        response = await self._client.chat.completions.create(
+            model=self._model,
+            temperature=0,
+            messages=_build_messages(text),
+        )
+        return parse_response(response)
+
+    async def aclose(self) -> None:
+        await self._client.close()

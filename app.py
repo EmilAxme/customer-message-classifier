@@ -6,6 +6,7 @@
 """
 from __future__ import annotations
 
+import asyncio
 import io
 import json
 import os
@@ -14,8 +15,8 @@ import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
 
-from llm_client import ClassifierClient
-from pipeline import classify_batch, to_task_json
+from llm_client import AsyncClassifierClient
+from pipeline import DEFAULT_CONCURRENCY, classify_batch_async, to_task_json
 
 load_dotenv()
 
@@ -111,6 +112,10 @@ with st.sidebar:
     api_key = st.text_input("API-ключ", value=os.getenv("OPENAI_API_KEY", ""), type="password")
     base_url = st.text_input("Адрес сервера", value=os.getenv("OPENAI_BASE_URL", "https://codex.sale/v1"))
     model = st.text_input("Модель", value=os.getenv("OPENAI_MODEL", "gpt-5.4-mini"))
+    concurrency = st.slider(
+        "Одновременных запросов", min_value=1, max_value=20, value=DEFAULT_CONCURRENCY,
+        help="Сколько обращений обрабатывать параллельно. Больше — быстрее, но выше нагрузка на сервис.",
+    )
     st.caption("Обычно ключ уже прописан в файле .env. Менять эти поля не нужно.")
 
 st.subheader("Шаг 1. Загрузите обращения")
@@ -148,11 +153,19 @@ if st.button("🚀 Обработать", type="primary", disabled=not items):
     if not api_key:
         st.error("Введите API-ключ в настройках слева.")
     else:
-        client = ClassifierClient(api_key=api_key, model=model, base_url=base_url)
         bar = st.progress(0.0, text="Обработка…")
-        results = classify_batch(
-            client, items, on_progress=lambda n, total: bar.progress(n / total, text=f"Обработано {n} из {total}")
-        )
+
+        async def run() -> list[dict]:
+            client = AsyncClassifierClient(api_key=api_key, model=model, base_url=base_url)
+            try:
+                return await classify_batch_async(
+                    client, items, concurrency=concurrency,
+                    on_progress=lambda n, total: bar.progress(n / total, text=f"Обработано {n} из {total}"),
+                )
+            finally:
+                await client.aclose()
+
+        results = asyncio.run(run())
         bar.empty()
         failed = sum(1 for r in results if r["error"])
         st.session_state["results"] = results
