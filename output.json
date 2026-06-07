@@ -1,0 +1,92 @@
+[
+  {
+    "id": 1,
+    "type": "question",
+    "product": "ноутбука Lenovo ThinkPad",
+    "contacts": {
+      "phone": "+79991234567",
+      "email": null
+    }
+  },
+  {
+    "id": 2,
+    "type": "complaint",
+    "product": "Sony WH-1000XM5",
+    "contacts": {
+      "phone": null,
+      "email": "ivan@example.com"
+    }
+  },
+  {
+    "id": 3,
+    "type": "order",
+    "product": "кофемашину DeLonghi Magnifica",
+    "contacts": {
+      "phone": "+79261112233",
+      "email": null
+    }
+  },
+  {
+    "id": 4,
+    "type": "question",
+    "product": "iPhone 15 Pro",
+    "contacts": {
+      "phone": null,
+      "email": null
+    }
+  },
+  {
+    "id": 5,
+    "type": "complaint",
+    "product": "книги",
+    "contacts": {
+      "phone": null,
+      "email": "pavel.k@mail.ru"
+    }
+  },
+  {
+    "id": 6,
+    "type": "order",
+    "product": "офисных стула Markus",
+    "contacts": {
+      "phone": "+79031234455",
+      "email": "office@company.ru"
+    }
+  },
+  {
+    "id": 7,
+    "type": "question",
+    "product": "TP-Link Archer",
+    "contacts": {
+      "phone": null,
+      "email": null
+    }
+  },
+  {
+    "id": 8,
+    "type": "complaint",
+    "product": "Samsung Galaxy Tab",
+    "contacts": {
+      "phone": "8-915-000-11-22",
+      "email": null
+    }
+  },
+  {
+    "id": 9,
+    "type": "question",
+    "product": "пылесос Dyson V11",
+    "contacts": {
+      "phone": null,
+      "email": "anna_s@yandex.ru"
+    }
+  },
+  {
+    "id": 10,
+    "type": "order",
+    "product": "электрический чайник Bosch",
+    "contacts": {
+      "phone": null,
+      "email": null
+    }
+  }
+]
