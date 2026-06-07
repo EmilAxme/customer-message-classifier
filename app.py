@@ -10,6 +10,7 @@ import asyncio
 import io
 import json
 import os
+import re
 
 import pandas as pd
 import streamlit as st
@@ -33,6 +34,24 @@ COLUMNS_RU = {
 TEXT_HINTS = ("text", "message", "обращение", "текст", "сообщение")
 
 st.set_page_config(page_title="Классификатор обращений", page_icon="📨", layout="wide")
+
+
+LINE_MODE = "Одно обращение — одна строка"
+BLANK_MODE = "Обращения разделены пустой строкой"
+
+
+def split_messages(raw: str, by_blank_line: bool) -> list[str]:
+    """Разбить введённый текст на обращения.
+
+    by_blank_line=False — каждое обращение на отдельной строке.
+    by_blank_line=True — обращения разделены пустой строкой, поэтому внутри
+    одного обращения допустимы переносы строк.
+    """
+    if by_blank_line:
+        blocks = re.split(r"\n\s*\n+", raw.strip())
+    else:
+        blocks = raw.splitlines()
+    return [block.strip() for block in blocks if block.strip()]
 
 
 # ---------- чтение загруженного файла ----------
@@ -123,8 +142,14 @@ items: list[dict] = []
 tab_text, tab_file = st.tabs(["✍️ Вставить текст", "📄 Загрузить файл"])
 
 with tab_text:
+    mode = st.radio(
+        "Как разделены обращения?",
+        [LINE_MODE, BLANK_MODE],
+        horizontal=True,
+        help="Выберите второй вариант, если внутри одного обращения есть переносы строк.",
+    )
     raw = st.text_area(
-        "Каждое обращение — с новой строки",
+        "Введите обращения",
         height=200,
         placeholder=(
             "Купил наушники Sony WH-1000XM5, не работают. Почта ivan@example.com\n"
@@ -133,7 +158,9 @@ with tab_text:
         ),
     )
     if raw.strip():
-        items = [{"id": i, "text": s.strip()} for i, s in enumerate(raw.splitlines(), 1) if s.strip()]
+        texts = split_messages(raw, by_blank_line=(mode == BLANK_MODE))
+        items = [{"id": i, "text": text} for i, text in enumerate(texts, 1)]
+        st.caption(f"Распознано обращений: **{len(items)}** — проверьте, что число верное.")
 
 with tab_file:
     uploaded = st.file_uploader("CSV, Excel, TXT или JSON", type=["csv", "xlsx", "xls", "txt", "json"])
