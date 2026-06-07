@@ -2,7 +2,7 @@
   {
     "id": 1,
     "type": "question",
-    "product": "ноутбука Lenovo ThinkPad",
+    "product": "ноутбук Lenovo ThinkPad",
     "contacts": {
       "phone": "+79991234567",
       "email": null
@@ -11,7 +11,7 @@
   {
     "id": 2,
     "type": "complaint",
-    "product": "Sony WH-1000XM5",
+    "product": "наушники Sony WH-1000XM5",
     "contacts": {
       "phone": null,
       "email": "ivan@example.com"
@@ -20,7 +20,7 @@
   {
     "id": 3,
     "type": "order",
-    "product": "кофемашину DeLonghi Magnifica",
+    "product": "кофемашина DeLonghi Magnifica",
     "contacts": {
       "phone": "+79261112233",
       "email": null
@@ -29,7 +29,7 @@
   {
     "id": 4,
     "type": "question",
-    "product": "iPhone 15 Pro",
+    "product": "смартфон iPhone 15 Pro",
     "contacts": {
       "phone": null,
       "email": null
@@ -38,7 +38,7 @@
   {
     "id": 5,
     "type": "complaint",
-    "product": "книги",
+    "product": "книга",
     "contacts": {
       "phone": null,
       "email": "pavel.k@mail.ru"
@@ -47,7 +47,7 @@
   {
     "id": 6,
     "type": "order",
-    "product": "офисных стула Markus",
+    "product": "офисный стул Markus",
     "contacts": {
       "phone": "+79031234455",
       "email": "office@company.ru"
@@ -56,7 +56,7 @@
   {
     "id": 7,
     "type": "question",
-    "product": "TP-Link Archer",
+    "product": "роутер TP-Link Archer",
     "contacts": {
       "phone": null,
       "email": null
@@ -65,7 +65,7 @@
   {
     "id": 8,
     "type": "complaint",
-    "product": "Samsung Galaxy Tab",
+    "product": "планшет Samsung Galaxy Tab",
     "contacts": {
       "phone": "8-915-000-11-22",
       "email": null
