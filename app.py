@@ -175,6 +175,11 @@ with tab_file:
         except Exception as exc:  # noqa: BLE001 - показать понятную ошибку пользователю
             st.error(f"Не удалось прочитать файл: {exc}")
 
+if items:
+    with st.expander(f"👁 Предпросмотр распознанных обращений ({len(items)})"):
+        preview = pd.DataFrame([{"№": it["id"], "Текст обращения": it["text"]} for it in items])
+        st.dataframe(preview, use_container_width=True, hide_index=True)
+
 st.subheader("Шаг 2. Обработка")
 if st.button("🚀 Обработать", type="primary", disabled=not items):
     if not api_key:
